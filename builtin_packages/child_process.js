@@ -1,4 +1,4 @@
-function exec(command, callback1='nobk',callback2='nobk') {
+function exec(command, callback1, callback2) {
   var err = 'err';
   var stdout = 'stdout';
   var stderr = 'stderr';
@@ -8,7 +8,7 @@ function exec(command, callback1='nobk',callback2='nobk') {
   callback2(err, stdout, stderr);
 }
 
-function execSync(command, options='nothing',callback='nobk') {
+function execSync(command, options, callback) {
   var err = 'err';
   var stdout = 'stdout';
   var stderr = 'stderr';
@@ -17,7 +17,7 @@ function execSync(command, options='nothing',callback='nobk') {
   callback(err, stdout, stderr);
 }
 
-function execFile(command, options='nothing', dict='nothing', callback='nobk') {
+function execFile(command, options, dict, callback) {
   var err = 'err';
   var stdout = 'stdout';
   var stderr = 'stderr';
@@ -26,11 +26,11 @@ function execFile(command, options='nothing', dict='nothing', callback='nobk') {
   callback(err, stdout, stderr);
 }
 
-function spawn(command, args='nothing', options='nothion') {
-  sink_hqbpillvul_spawn(command);
+function spawn(command, args, options='nothion') {
+  sink_hqbpillvul_spawn(command, args);
 }
 
-function spawnSync(command, args='nothing', options='nothion') {
+function spawnSync(command, args, options='nothion') {
   sink_hqbpillvul_spawnSync(command);
 }
 
@@ -42,3 +42,5 @@ module.exports = {
   spawn,
   spawnSync
 }
+
+module.exports.execFileSync = execFile;
