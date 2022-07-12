@@ -113,6 +113,8 @@ class Graph:
 
         self.vul_type = None
 
+        self.num_of_ast_nodes = None
+
         csv.field_size_limit(2 ** 31 - 1)
         class joern_dialect(csv.excel_tab):
             doublequote = False
@@ -403,6 +405,9 @@ class Graph:
         # reset cur_id
         self.cur_id = self.graph.number_of_nodes()
 
+        if self.num_of_ast_nodes is None:
+            self.num_of_ast_nodes = self.graph.number_of_nodes()
+
     def import_from_CSV(self, nodes_file_name, rels_file_name, offset=0):
         with open(nodes_file_name) as fp:
             reader = csv.DictReader(fp, dialect=self.csv_dialect)
@@ -428,6 +433,9 @@ class Graph:
         # reset cur_id
         self.cur_id = self.graph.number_of_nodes()
 
+        if self.num_of_ast_nodes is None:
+            self.num_of_ast_nodes = self.graph.number_of_nodes()
+
     def export_to_CSV(self, nodes_file_name, rels_file_name, light = False):
         """
         export to CSV to import to neo4j
@@ -438,7 +446,8 @@ class Graph:
         if not os.path.exists("./exports"):
             os.mkdir("./exports")
         with open(nodes_file_name, 'w') as fp:
-            headers = ['id:ID','labels:label','type','flags:string[]','lineno:int','code','childnum:int','funcid:int','classname','namespace','endlineno:int','name','doccomment', 'export', 'tainted']
+            # headers = ['id:ID','labels:label','type','flags:string[]','lineno:int','code','childnum:int','funcid:int','classname','namespace','endlineno:int','name','doccomment', 'export', 'tainted']
+            headers = ['id:ID','labels:label','type','flags:string[]','lineno:int','code','childnum:int','funcid:int','classname','namespace','endlineno:int','name','doccomment']
             writer = csv.DictWriter(fp, dialect=self.csv_dialect, fieldnames=headers, extrasaction='ignore')
             writer.writeheader()
             nodes = list(self.graph.nodes(data = True))
@@ -446,6 +455,12 @@ class Graph:
             for node in nodes:
                 node_id, attr = node
                 row = dict(attr)
+
+                try:
+                    if int(node_id) >= self.num_of_ast_nodes:
+                        break
+                except ValueError:
+                    pass
 
                 if light:
                     if 'export' not in row:
@@ -472,6 +487,10 @@ class Graph:
                 if edge_from not in exported_nodes or \
                         edge_to not in exported_nodes:
                         continue
+            
+                # if attr['type:TYPE'] not in ['FLOWS_TO', 'CALLS']:
+                if attr['type:TYPE'] not in ['CALLS']:
+                    continue
 
                 row = dict(attr)
                 row['start:START_ID'] = edge_from
