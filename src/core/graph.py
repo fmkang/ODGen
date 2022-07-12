@@ -216,7 +216,8 @@ class Graph:
         assert to_ID is not None, "Failed to add an edge, to_ID is None."
         assert from_ID != 'string' and to_ID != 'string'
         self.op_cnt['add_edge'] += 1
-        attr['timestamp'] = self.get_timestamp()
+        if attr.get('type:TYPE') in ['LOOKUP', 'OBJ_REACHES']:
+            attr['timestamp'] = self.get_timestamp()
         self.graph.add_edge(from_ID, to_ID, None, **attr)
     
     def add_edge_if_not_exist(self, from_ID, to_ID, attr):
@@ -229,6 +230,13 @@ class Graph:
             self.add_edge(from_ID, to_ID, attr)
         else:
             for key, edge_attr in self.graph[from_ID][to_ID].items():
+                # _edge_attr = dict(edge_attr)
+                # if 'timestamp' in _edge_attr:
+                #     del _edge_attr['timestamp']
+                # if _edge_attr == attr:
+                #     self.logger.warning("Edge {}->{} exists: {}, {}. Duplicate edge "
+                #     "will not be created.".format(from_ID,to_ID,key,_edge_attr))
+                #     return
                 if edge_attr == attr:
                     self.logger.warning("Edge {}->{} exists: {}, {}. Duplicate edge "
                     "will not be created.".format(from_ID,to_ID,key,edge_attr))
