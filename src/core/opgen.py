@@ -1,19 +1,20 @@
-from .graph import Graph
-from .utils import * 
-from .helpers import * 
-from .timeout import timeout, TimeoutError
-from func_timeout import func_timeout, FunctionTimedOut
-from src.core.pop_funcs import pop_funcs
-from ..plugins.manager import PluginManager 
 from ..plugins.internal.setup_env import setup_opg
-from .checker import traceback, vul_checking
+from ..plugins.manager import PluginManager 
+from ..gquerier import GraphQuerier
+
 from .multi_run_helper import validate_package, get_entrance_files_of_package 
-from .logger import loggers
+from .checker import traceback, vul_checking
+from .pop_funcs import pop_funcs
 from .options import options
-import os
-import shutil
-import sys
+from .logger import loggers
+from .graph import Graph
+from .helpers import * 
+from .utils import * 
+
+from func_timeout import func_timeout, FunctionTimedOut
 from tqdm import tqdm
+
+import os, sys, shutil, networkx
 
 class OPGen:
     """
@@ -327,11 +328,28 @@ class OPGen:
         print("Cleaning up tmp dirs")
         #shutil.rmtree(options.run_env)
         #export to csv
-        if options.export is not None:
-            if options.export == 'light':
-                self.graph.export_to_CSV("./exports/nodes.csv", "./exports/rels.csv", light=True)
-            else:
-                self.graph.export_to_CSV("./exports/nodes.csv", "./exports/rels.csv", light=False)
+        self.export_graph(to_path='./exports', file_format=options.export)
+        
+    def export_graph(self, file_format: str, to_path: str):
+        opgen_graph, networkx_graph = self.graph, self.graph.graph
+        if file_format == 'csv': 
+            opgen_graph.export_to_CSV(f"{to_path}/nodes.csv", f"{to_path}/rels.csv", light=False)
+        elif file_format == 'csv-light': 
+            opgen_graph.export_to_CSV(f"{to_path}/nodes.csv", f"{to_path}/rels.csv", light=True)
+        elif file_format == 'json': 
+            querier = GraphQuerier(target=opgen_graph, maxdepth=-1)
+            end_node = querier.find_node(whose_satisifies=lambda n: n.type == 'BASE_SCOPE')
+            subnodes = querier.find_all_nodes(whose_satisifies=lambda n: int(n.id) <= int(end_node.id))
+            target_subgraph = networkx.subgraph(networkx_graph, (str(n.id) for n in subnodes))
+            os.makedirs(to_path, exist_ok=True)
+            json.dump(
+                obj = networkx.node_link_data(target_subgraph), fp = open(f"{to_path}/graph.json", 'w'), 
+                default= lambda obj: obj.toJSON() if hasattr(obj, 'toJSON') else obj.__dict__ \
+                    if type(obj) != set else dir(obj)
+            )
+        else: pass 
+        return None
+
 
 def start_from_func(G, module_path, vul_type='proto_pollution'):
     """

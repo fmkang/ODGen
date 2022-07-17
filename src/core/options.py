@@ -48,7 +48,7 @@ def parse_args():
     parser.add_argument('--no-file-based', action='store_true', default=False, help="No file based detection")
     parser.add_argument('--parallel', help="run multiple package parallelly")
     parser.add_argument('--auto-type', action='store_true', default=False, help="Auto change the type of wildcard obj based on the called method")
-    parser.add_argument('--export', help="export the graph to csv files, can be light or all")
+    parser.add_argument('--export', type=str, choices=['csv', 'csv-light', 'json'],help="export the graph to csv files, can be light or all")
     parser.add_argument('--nodejs', action='store_true', default=False, help="run a nodejs package")
     parser.add_argument('--gc', action='store_true', default=False, help="run a garbage collection after every function run")
     parser.add_argument('--more-output', action='store_true', default=False, help="output a more detailed version of result")
