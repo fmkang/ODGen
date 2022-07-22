@@ -436,7 +436,7 @@ class Graph:
         if self.num_of_ast_nodes is None:
             self.num_of_ast_nodes = self.graph.number_of_nodes()
 
-    def export_to_CSV(self, nodes_file_name, rels_file_name, light = False):
+    def export_to_csv(self, nodes_file_name, rels_file_name, light = False):
         """
         export to CSV to import to neo4j
         """

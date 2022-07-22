@@ -1,20 +1,18 @@
-from ..plugins.internal.setup_env import setup_opg
-from ..plugins.manager import PluginManager 
-from ..gquerier import GraphQuerier
-
-from .multi_run_helper import validate_package, get_entrance_files_of_package 
-from .checker import traceback, vul_checking
-from .pop_funcs import pop_funcs
-from .options import options
-from .logger import loggers
 from .graph import Graph
-from .helpers import * 
 from .utils import * 
-
+from .helpers import * 
+from .timeout import timeout, TimeoutError
 from func_timeout import func_timeout, FunctionTimedOut
-from tqdm import tqdm
+from src.core.pop_funcs import pop_funcs
+from ..plugins.manager import PluginManager 
+from ..plugins.internal.setup_env import setup_opg
+from .checker import traceback, vul_checking
+from .multi_run_helper import validate_package, get_entrance_files_of_package 
+from .logger import loggers
+from .options import options
+import os, sys, shutil, networkx, tqdm
+from ..gquerier import GraphQuerier, NodeType
 
-import os, sys, shutil, networkx
 
 class OPGen:
     """
@@ -328,26 +326,24 @@ class OPGen:
         print("Cleaning up tmp dirs")
         #shutil.rmtree(options.run_env)
         #export to csv
-        self.export_graph(to_path='./exports', file_format=options.export)
+        self.export_to_file(to_format=options.export, file_path='./exports')
         
-    def export_graph(self, file_format: str, to_path: str):
+    def export_to_file(self, to_format: str, file_path: str):
         opgen_graph, networkx_graph = self.graph, self.graph.graph
-        if file_format == 'csv': 
-            opgen_graph.export_to_CSV(f"{to_path}/nodes.csv", f"{to_path}/rels.csv", light=False)
-        elif file_format == 'csv-light': 
-            opgen_graph.export_to_CSV(f"{to_path}/nodes.csv", f"{to_path}/rels.csv", light=True)
-        elif file_format == 'json': 
-            querier = GraphQuerier(target=opgen_graph, maxdepth=-1)
-            end_node = querier.find_node(whose_satisifies=lambda n: n.type == 'BASE_SCOPE')
-            subnodes = querier.find_all_nodes(whose_satisifies=lambda n: int(n.id) <= int(end_node.id))
-            target_subgraph = networkx.subgraph(networkx_graph, (str(n.id) for n in subnodes))
-            os.makedirs(to_path, exist_ok=True)
+        os.makedirs(file_path, exist_ok=True)
+        if 'csv' in to_format: 
+            is_light = 'csv-light' in to_format
+            opgen_graph.export_to_csv(f"{file_path}/nodes.csv", f"{file_path}/rels.csv", light=is_light)
+        if 'json' in to_format: 
+            gquerier = GraphQuerier(target=opgen_graph, maxdepth=-1)
+            end_node = gquerier.find_first_node(who_satisifies=lambda node: node.type == NodeType.BASE_SCOPE)
+            subnodes = gquerier.find_all_nodes(who_satisify=lambda node: int(node.id) <= int(end_node.id))
+            subgraph = networkx_graph.subgraph(str(n.id) for n in subnodes)
             json.dump(
-                obj = networkx.node_link_data(target_subgraph), fp = open(f"{to_path}/graph.json", 'w'), 
+                obj = networkx.node_link_data(subgraph), fp = open(f"{file_path}/graph.json", 'w'), 
                 default= lambda obj: obj.toJSON() if hasattr(obj, 'toJSON') else obj.__dict__ \
                     if type(obj) != set else dir(obj)
             )
-        else: pass 
         return None
 
 
